@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
+  <title>안양 맛집</title>
+  <link rel="stylesheet" href="/stylesheets/style.css">
+  <script type="text/javascript" src="https://openapi.map.naver.com/openapi/v3/maps.js?ncpClientId=13is9bpp7d"></script>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+</head>
+
+<body>
+  <div id="navbar">안양 맛집</div>
+  <div id="infoBox">
+    <div id="infoTitle">현재날짜</div>
+    <div id="infoContent">2021.06.29</div>
+  </div>
+
+  <div id="current">현재위치</div>
+
+  <div id="map" style="width:100%;height:100vh;"></div>
+  <script type="text/javascript" src="/data/data.js"></script>
+  <script>
+    //전체맵을 띄우는 코드
+    var mapOptions = {
+      center: new naver.maps.LatLng(37.3595704, 127.105399),
+      zoom: 10
+    };
+
+
+    var map = new naver.maps.Map('map', mapOptions);
+
+    var markerList = [];
+    var infowindowList = [];
+
+    //마커를 여러개 띄워보기
+    for (var i in data) {
+      var target = data[i];
+      var latlng = new naver.maps.LatLng(target.lat, target.lng);
+      marker = new naver.maps.Marker({
+        map: map,
+        position: latlng,
+        icon: {
+          content: "<div class='marker'></div>",
+          anchor: new naver.maps.Point(12, 12)//도형의 중심점 지정(중심점을 찍고 도화지를 돌려서 원을 그림)
+        }
+      });
+
+      var content = `<div class='infowindow_wrap'>
+        <div class='infowindow_title'>${target.title}</div>
+        <div class='infowindow_content'>${target.content}</div>
+        <div class='infowindow_date'>${target.date}</div>
+        </div>`
+
+      var infoWwindow = new naver.maps.InfoWindow({
+        content: content,
+        backgroundColor: "#00ff0000",  // 투명
+        borderColor: "#00ff0000", // 실제 꾸미는 것은 css에서할것이므로, 
+        // 여기서는 일단 준비만.
+        anchorSize: new naver.maps.Size(0, 0) // infoWindow가 말풍선 형태인데, 
+        // 0으로 해줘서 꼬리표를 삭제
+      });
+      markerList.push(marker);
+      infowindowList.push(infoWwindow);
+    }
+    for (var i = 0; i < markerList.length; i++) {
+      naver.maps.Event.addListener(map, "click", clickMap(i));//map의 빈곳 즉 map 전체를 클릭할경우 이벤트 발생
+      naver.maps.Event.addListener(markerList[i], "click", getClickHandler(i));
+    }
+
+    function clickMap(i){
+      return function(){
+        var infoWindow = infowindowList[i];
+        infoWindow.close();
+      }
+    }
+
+    function getClickHandler(i) {
+      return function () {
+        var marker = markerList[i];
+        var infoWindow = infowindowList[i];
+
+        // 클릭을 하면 infoWindow가 뜨고, 이미 떠 있을 때 클릭을 하면 infoWindow가 닫혀야 함
+        // 그러므로 먼저 infoWindow가 떠 있는지 확인이 필요
+        if (infoWindow.getMap()) {  // infoWindow 떠 있는지 확인
+          infoWindow.close();
+        } else {
+          infoWindow.open(map, marker);
+        }
+      }
+    }
+
+    //현재 위치 표시 하기
+    $('#current').click(()=>{
+      if('geolocation' in navigator){
+        navigator.geolocation.getCurrentPosition(function(position){
+          const lat = position.coords.latitude;//위도
+          const lng = position.coords.longitude;//경도
+          const lanlng = new naver.maps.LatLng(lat,lng);
+          marker = new naver.maps.Marker({
+            map:map,
+            position:latlng,
+            icon:{
+              content:'<img class="pulse" draggable="false" unselectable="on" src="https://myfirstmap.s3.ap-northeast-2.amazonaws.com/circle.png">',
+              Markeranchor: new naver.maps.Point(11,11)
+            }
+          });
+          map.setZoom(15,false);
+          map.penTo(latlng);
+        });
+      }else{
+        alert('위치정보 사용 불가능!');
+      }
+    });
+
+  </script>
+</body>
+
+</html>
